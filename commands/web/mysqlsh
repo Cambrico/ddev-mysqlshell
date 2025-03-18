@@ -1,0 +1,7 @@
+#!/bin/bash
+## Description: Run `mysqlsh` command
+## Usage: mysqlsh
+## Example: ddev mysqlsh [command]
+
+
+mysqlsh --no-defaults "$@"

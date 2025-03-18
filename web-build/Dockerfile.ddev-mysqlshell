@@ -1,0 +1,18 @@
+# MySQL Shell
+
+# Install required dependencies.
+RUN (apt-get update || true) \
+  && DEBIAN_FRONTEND=noninteractive apt-get install -y -o \
+     Dpkg::Options::="--force-confold" --no-install-recommends --no-install-suggests \
+     wget lsb-release gnupg tar zstd
+
+# Add MySQL Repository.
+RUN wget https://dev.mysql.com/get/$(wget -qO- https://dev.mysql.com/downloads/repo/apt/ | grep -oP 'mysql-apt-config_\d+\.\d+\.\d+-\d+_all\.deb' | head -1) && \
+    dpkg -i mysql-apt-config_*.deb && \
+    rm mysql-apt-config_*.deb
+
+# Install MySQL Shell.
+RUN (apt-get update || true) \
+  && DEBIAN_FRONTEND=noninteractive apt-get install -y -o \
+     Dpkg::Options::="--force-confold" --no-install-recommends --no-install-suggests \
+     mysql-shell
