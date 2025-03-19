@@ -20,15 +20,15 @@ TAR_FILE="/var/www/html/$1"
 FILENAME=$(basename "$TAR_FILE" .tar.gz)
 TEMP_DIR="/var/www/html/$FILENAME"
 THREADS=8
-
 # Create the temporary directory.
-echo "## Creating the temporary directory $TEMP_DIR ##"
+echo "Creating the temporary directory $TEMP_DIR"
 mkdir -p "$TEMP_DIR"
 
 # Extract the tar.gz file.
-echo "## Unzipping $TAR_FILE ##"
+echo "Unzipping $TAR_FILE"
 if ! tar -xzf $TAR_FILE -C $TEMP_DIR; then
-  echo "!! Error: Failed to extract $TAR_FILE."
+  echo -e "\e[31mError: Failed to extract $TAR_FILE.\e[0m"
+  rm -rf $TEMP_DIR
   exit 1
 fi
 
@@ -37,31 +37,38 @@ DIRNAME=$(basename "$(find "$TEMP_DIR" -mindepth 1 -maxdepth 1 -type d)")
 
 # Set the path to the extracted directory.
 EXTRACT_DIR="$TEMP_DIR/$DIRNAME"
-echo "## Backup extracted in: $EXTRACT_DIR ##"
+echo "Backup extracted in: $EXTRACT_DIR"
 
 # Delete current database.
-echo "## Deleting current database ##"
+echo "Deleting current database."
 drush sql-drop -y
 
 # Find and decompress the .tsv.zst files.
-echo "## Decompressing .tsv.zst files in $EXTRACT_DIR ##"
+echo "Decompressing .tsv.zst files in $EXTRACT_DIR"
 find $EXTRACT_DIR -name "*.tsv.zst" -exec zstd -d -q {} -o {}.tsv \;
 
 # Select the database
-echo "## Selecting database: """$DB_NAME"" ##"
+echo "Selecting database: ""$DB_NAME""."
 mysqlsh --no-defaults --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USER --password=$MYSQL_PASS --sql -e "USE $DB_NAME;"
 
 # Enable 'local_infile' to allow importing files.
 # Read more: https://dev.mysql.com/doc/refman/8.4/en/server-system-variables.html#sysvar_local_infile
-echo "## Enabling 'local_infile' ##"
+echo "Enabling 'local_infile'"
 mysqlsh --no-defaults --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_ROOT_USER --password=$MYSQL_ROOT_PASS --sql -e "SET GLOBAL local_infile = 'ON';"
 
 # Import the backup using MySQL Shell.
-echo "## Loading the backup ##"
+echo "Loading the backup."
 mysqlsh --no-defaults --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USER --password=$MYSQL_PASS --js -e "util.loadDump('$EXTRACT_DIR', {schema:'$DB_NAME', threads:$THREADS});"
 
+if [ $? -ne 0 ]; then
+  echo -e "\e[31mError: Failed to import the backup.\e[0m"
+  rm -rf $TEMP_DIR
+  exit 1
+fi
+
 # Remove the extracted directory after the import.
-echo "## Removing the temporary directory $TEMP_DIR ##"
+echo "Removing the temporary directory $TEMP_DIR."
 rm -rf $TEMP_DIR
 
-echo "## Process completed successfully ##"
+echo -e "\e[32mProcess completed successfully.\e[0m"
+
