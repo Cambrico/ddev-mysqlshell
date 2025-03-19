@@ -1,0 +1,53 @@
+#!/bin/bash
+## Description: Export DB using `mysqlsh`.
+## Usage: mysqlsh-export
+## Example: ddev mysqlsh-export
+
+DB_NAME="db"
+MYSQL_USER="db"
+MYSQL_PASS="db"
+MYSQL_ROOT_USER="root"
+MYSQL_ROOT_PASS="root"
+MYSQL_HOST="db"
+MYSQL_PORT=3306
+THREADS=8
+CURRENT_TIME=$(date +"%Y%m%d%H%M")
+TEMP_DIR="/var/www/html/tmp-backup"
+RESULT_FILE="/var/www/html/${DB_NAME}-dump-${CURRENT_TIME}"
+
+# Create the temporary directory.
+echo "Creating the temporary directory ${TEMP_DIR}."
+mkdir -p "$TEMP_DIR"
+
+# Set privileges to db user.
+echo "Setting privileges to ${MYSQL_USER} user."
+mysqlsh --no-defaults --host=${MYSQL_HOST} --port=${MYSQL_PORT} --user=${MYSQL_ROOT_USER} --password=${MYSQL_ROOT_PASS} --sql -e "GRANT SELECT ON mysql.* TO '${MYSQL_USER}'@'%'"
+mysqlsh --no-defaults --host=${MYSQL_HOST} --port=${MYSQL_PORT} --user=${MYSQL_ROOT_USER} --password=${MYSQL_ROOT_PASS} --sql -e "FLUSH PRIVILEGES"
+
+# Create the database dump.
+echo "Creating the database dump."
+mysqlsh --no-defaults --host=${MYSQL_HOST} --port=${MYSQL_PORT} --user=${MYSQL_USER} --password=${MYSQL_PASS} --js -e "util.dumpSchemas(['${DB_NAME}'], '${TEMP_DIR}', {bytesPerChunk: '100M', compression: 'gzip', threads:$THREADS});"
+
+# Check if the dump was created.
+if [ ! -f "$TEMP_DIR/$DB_NAME.sql" ]; then
+  echo -e "\e[31mError: Failed to create the dump.\e[0m"
+  rm -rf $TEMP_DIR
+  exit 1
+fi
+
+cd $TEMP_DIR
+# Compress the dump.
+tar -czf "${RESULT_FILE}.tar.gz" -C "${TEMP_DIR}" .
+if [ $? -eq 0 ]; then
+  echo "Compressed dump: ${RESULT_FILE}.tar.gz"
+else
+  echo -e "\e[31mError: Failed to create the tar file.\e[0m"
+  rm -rf $TEMP_DIR
+  exit 1
+fi
+
+# Remove the temporary directory.
+echo "Removing temporary directory."
+rm -rf $TEMP_DIR
+
+echo -e "\e[32mProcess completed successfully. Backup is located at: ${RESULT_FILE}.tar.gz\e[0m"
