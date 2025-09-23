@@ -1,29 +1,12 @@
 name: ddev-mysqlshell
 
+ddev_version_constraint: '>= v1.24.3'
+
 project_files:
   - commands/web/mysqlsh
   - commands/web/mysqlsh-import
   - commands/web/mysqlsh-export
   - web-build/Dockerfile.ddev-mysqlshell
 
-
-# Version constraint for DDEV that will be validated against the running DDEV executable
-# and prevent add-on from being installed if it doesn't validate.
-# See https://github.com/Masterminds/semver#checking-version-constraints for constraint rules.
-# Available with DDEV v1.23.4+, and works only for DDEV v1.23.4+ binaries
-ddev_version_constraint: '>= v1.24.2'
-
-# DDEV environment variables can be interpolated into these actions.
-# post_install_actions are executed in the context of the target project's .ddev directory.
 post_install_actions:
-   - chmod +x ${DDEV_APPROOT}/.ddev/commands/web/mysqlsh
-   - chmod +x ${DDEV_APPROOT}/.ddev/commands/web/mysqlsh-import
-   - chmod +x ${DDEV_APPROOT}/.ddev/commands/web/mysqlsh-export
-
-# Shell actions that can be done during removal of the add-on.
-# Files listed in project_files section will be automatically removed here if they contain #ddev-generated line.
-# removal_actions are executed in the context of the target project's .ddev directory.
-removal_actions:
-   - rm ${DDEV_APPROOT}/.ddev/commands/web/mysqlsh
-   - rm ${DDEV_APPROOT}/.ddev/commands/web/mysqlsh-import
-   - rm ${DDEV_APPROOT}/.ddev/commands/web/mysqlsh-export
+   - chmod +x ${DDEV_APPROOT}/.ddev/commands/web/mysqlsh*
