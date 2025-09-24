@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 ## Description: Run `mysqlsh` command
 ## Usage: mysqlsh
 ## Example: ddev mysqlsh [command]

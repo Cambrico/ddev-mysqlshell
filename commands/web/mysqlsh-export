@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 ## Description: Export DB using `mysqlsh`.
 ## Usage: mysqlsh-export
 ## Example: ddev mysqlsh-export

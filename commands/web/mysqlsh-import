@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 ## Description: Import DB using `mysqlsh`.
 ## Usage: mysqlsh-import
 ## Example: ddev mysqlsh-import [tar.gz path]
